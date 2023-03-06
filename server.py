@@ -42,7 +42,8 @@ while True:
         print(f'Connection: {conn}, {addr}')
         connection_counter += 1
 
-        t = threading.Thread(target=handle_connection, args=(conn, connection_counter,)).start()
+        t = threading.Thread(target=handle_connection, args=(conn, connection_counter,))
+        t.start()
         t.join()
 
     except KeyboardInterrupt:
