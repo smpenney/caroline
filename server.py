@@ -14,7 +14,7 @@ def signal_handler(signum, frame):
     sys.exit(0)
 
 
-def handle_connection(conn: socket.socket, addr: str, num: int):
+def handle_connection(conn: socket.socket, addr: str, num: int, dir: str):
     size = 0
     conn.setblocking(False)
     conn.settimeout(TIMEOUT)
@@ -29,15 +29,17 @@ def handle_connection(conn: socket.socket, addr: str, num: int):
                     break
                 file += data
                 size += len(data)
+            
+            with open(f'{dir}/{num}.file', 'wb') as f:
+                f.write(file)
+
         except Exception as e:
             sys.stderr.write(f'Error: {e}\r\n')
 
-        with open(f'{num}.file', 'wb') as f:
-                f.write(file)
 
     sys.stdout.write(f'Thread for file {num}: received {size} bytes from {addr}\r\n')
 
-def listener(host, port):
+def listener(port, dir):
     server = socket.socket()
     server.bind((HOST, port))
     server.listen()
@@ -51,7 +53,7 @@ def listener(host, port):
             connection_counter += 1
 
             t = threading.Thread(target=handle_connection, args=(
-                conn, addr, connection_counter,)).start()
+                conn, addr, connection_counter, dir,)).start()
             # t.join()
 
         except Exception as e:
@@ -69,7 +71,13 @@ def main():
         sys.stderr.write('ERROR: No port specified\r\n')
         sys.exit(1)
 
-    listener(HOST, port)
+    try:
+        dir = sys.argv[2]
+    except:
+        sys.stderr.write('ERROR: No directory specified\r\n')
+
+
+    listener(port, dir)
 
 
 if __name__ == '__main__':
