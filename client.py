@@ -13,6 +13,19 @@ def signal_handler(signum, frame):
     sys.stderr.write(f'SIGNAL: {signame} ({signum})\r\n')
     raise SystemExit(0)
 
+
+def handshake(conn):
+    shakes = 0
+    while shakes < 2:
+        msg = conn.recv(PACKET_SIZE)
+        print(f'RECV: {msg}')
+        if msg == COMMAND:
+            shakes += 1
+            conn.sendall(CONFIRMATION)
+
+def send_file(host, port, file):
+          
+
 def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGQUIT, signal_handler)
@@ -33,7 +46,7 @@ def main():
     # Validate port number
     if not (port >= 1 and port):
         sys.stderr.write(f"ERROR: Invalid port specified: {port}\n")
-        signal.raise_signal(signal.SIGQUIT)
+        raise SystemExit(1)
 
     # Create a socket to handle the file upload
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -46,33 +59,10 @@ def main():
             print("Connection established.")
         except:
             sys.stderr.write(f"ERROR: Failed to connect to {host}:{port}")
-            sys.exit(1)
+            raise SystemExit(1)
 
         # Receive accio commands
-        try:
-            while True:
-                msg = s.recv(PACKET_SIZE)
-                print(f'RECV: {msg}')
-                if msg == COMMAND:
-                    s.sendall(CONFIRMATION)
-                else:
-                    break
-
-            # while True:
-            #     msg = s.recv(len(COMMAND))
-            #     if msg == COMMAND:
-            #         break
-            #     print('Received from Server A: ', msg.decode())
-            #     s.send('confirm-accio\r\n'.encode())
-            #     while True:
-            #         msg_2 = s.recv(10000)
-            #         if msg_2 == COMMAND:
-            #             break
-            #         print('Received from Server B: ', msg_2.decode())
-            #         s.send('confirm-accio-again\r\n\r\n'.encode())
-        except:
-            sys.stderr.write(f"ERROR: Failed to receive data from {host}:{port}\n")
-            sys.exit(1)
+        handshake(s)
 
         # Try to send file
         try:
@@ -90,10 +80,10 @@ def main():
         # Terminate the connection
         try:
             s.close()
-            sys.exit(0)
+            raise SystemExit(0)
         except Exception as e:
             sys.stderr.write(f"ERROR: Failed to close the connection: {e}")
-            sys.exit(1)
+            raise SystemExit(1)
 
 
 if __name__ == '__main__':

@@ -6,21 +6,38 @@ import signal
 TIMEOUT = 10
 PACKET_SIZE = 4096
 HOST = '0.0.0.0'
-
+COMMAND = b'accio\r\n'
+CONFIRMATION = b'confirm\r\n'
+HANDSHAKES = 2
 
 def signal_handler(signum, frame):
     signame = signal.Signals(signum).name
     sys.stderr.write(f'SIGNAL: {signame} ({signum})\r\n')
-    sys.exit(0)
+    raise SystemExit(0)
 
+def handshake(conn, addr) -> bool:
+    try:
+        shakes = 0
+        while shakes < 2:
+            conn.sendall(COMMAND)
+            msg = conn.recv(PACKET_SIZE)
+            print(f'RECV: {msg}')
+            if msg == CONFIRMATION:
+                shakes += 1
+        return True
+    except Exception as e:
+        sys.stderr.write(f'ERROR: handshake failed for {addr}\n')
+        return False
 
 def handle_connection(conn: socket.socket, addr: str, num: int, dir: str):
     size = 0
     conn.setblocking(False)
     conn.settimeout(TIMEOUT)
 
+    if not handshake(conn, addr):
+        return
+
     with conn:
-        conn.send(b'accio\r\n')
         try:
             file = b''
             while True:
@@ -69,7 +86,7 @@ def main():
         port = int(sys.argv[1])
     except:
         sys.stderr.write('ERROR: No port specified\r\n')
-        sys.exit(1)
+        raise SystemExit(1)
 
     try:
         dir = sys.argv[2]
