@@ -58,12 +58,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     try:
         sent_size = 0
         with open(file_name, 'rb') as f:
-            chunk = f.read(packet_size)
+            chunk = f.read()
             while chunk:
-                s.send(chunk)
+                s.sendall(chunk)
                 sent_size += len(chunk)
                 chunk = f.read(packet_size)
-            print(f'Sent: {sent_size}')            
+        print(f'Sent: {sent_size}')            
 
         if sent_size == 0:
             raise Exception("Error: Failed to send data")

@@ -6,47 +6,54 @@ packet_size = 4096
 host = '0.0.0.0'
 server = socket.socket()
 connection_counter = 0
+TIMEOUT = 10
 
 try:
     port = int(sys.argv[1])
 except:
-    print('ERROR: No port specified')
+    sys.stderr.write('ERROR: No port specified\r\n')
     sys.exit(1)
 
 server.bind((host, port))
 server.listen()
-print('Server started on port', port)
+sys.stdout.write(f'Server started on port {port}\r\n')
 
 
-def handle_connection(conn: socket.socket, num: int):
+def handle_connection(conn: socket.socket, addr: str, num: int):
     size = 0
+    conn.setblocking(False)
+    conn.settimeout(TIMEOUT)
+
     with conn:
+        conn.send(b'accio\r\n')
         try:
-            conn.send(b'accio\r\n')
+            file = b''
+            while True:
+                data = conn.recv(packet_size)
+                if not data:
+                    break
+                file += data
+                size += len(data)
+
             with open(f'{num}.file', 'wb') as f:
-                while True:
-                    data = conn.recv(packet_size)
-                    print(data)
-                    if not data:
-                        break
-                    f.write(data)
-                    size += len(data)
+                f.write(file)
+
         except Exception as e:
-            print('Error: ', e)
-    print(f'Worker thread finished, received {size}')
+            sys.stderr.write(f'Error: {e}\r\n')
+    sys.stdout.write(f'Thread {num}, received {size} from {addr}\r\n')
 
 
 while True:
     try:
         conn, addr = server.accept()
-        print(f'Connection: {conn}, {addr}')
+        sys.stdout.write(f'Connection: {addr}\r\n')
         connection_counter += 1
 
-        t = threading.Thread(target=handle_connection, args=(conn, connection_counter,))
-        t.start()
-        t.join()
+        t = threading.Thread(target=handle_connection, args=(conn, addr, connection_counter,)).start()
+        # t.start()
+        # t.join()
 
     except KeyboardInterrupt:
-        print('Shutting down')
+        sys.stdout.write('Shutting down\r\n')
         server.close()
         break
