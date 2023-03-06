@@ -1,22 +1,17 @@
 import socket
 import sys
 import threading
+import signal
 
-packet_size = 4096
-host = '0.0.0.0'
-server = socket.socket()
-connection_counter = 0
 TIMEOUT = 10
+PACKET_SIZE = 1024
+HOST = '0.0.0.0'
 
-try:
-    port = int(sys.argv[1])
-except:
-    sys.stderr.write('ERROR: No port specified\r\n')
-    sys.exit(1)
 
-server.bind((host, port))
-server.listen()
-sys.stdout.write(f'Server started on port {port}\r\n')
+def signal_handler(signum, frame):
+    signame = signal.Signals(signum).name
+    sys.stderr.write(f'SIGNAL: {signame} ({signum})\r\n')
+    sys.exit(0)
 
 
 def handle_connection(conn: socket.socket, addr: str, num: int):
@@ -29,7 +24,7 @@ def handle_connection(conn: socket.socket, addr: str, num: int):
         try:
             file = b''
             while True:
-                data = conn.recv(packet_size)
+                data = conn.recv(PACKET_SIZE)
                 if not data:
                     break
                 file += data
@@ -43,17 +38,37 @@ def handle_connection(conn: socket.socket, addr: str, num: int):
     sys.stdout.write(f'Thread {num}, received {size} from {addr}\r\n')
 
 
-while True:
+def main():
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGQUIT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    server = socket.socket()
+    connection_counter = 0
+
     try:
-        conn, addr = server.accept()
-        sys.stdout.write(f'Connection: {addr}\r\n')
-        connection_counter += 1
+        port = int(sys.argv[1])
+    except:
+        sys.stderr.write('ERROR: No port specified\r\n')
+        sys.exit(1)
 
-        t = threading.Thread(target=handle_connection, args=(conn, addr, connection_counter,)).start()
-        # t.start()
-        # t.join()
+    server.bind((HOST, port))
+    server.listen()
+    sys.stdout.write(f'Server started on port {port}\r\n')
 
-    except KeyboardInterrupt:
-        sys.stdout.write('Shutting down\r\n')
-        server.close()
-        break
+    while True:
+        try:
+            conn, addr = server.accept()
+            sys.stdout.write(f'Connection: {addr}\r\n')
+            connection_counter += 1
+
+            threading.Thread(target=handle_connection, args=(
+                conn, addr, connection_counter,)).start()
+
+        except Exception as e:
+            sys.stderr.write('ERROR: {e}\r\n')
+
+
+if __name__ == '__main__':
+    main()
