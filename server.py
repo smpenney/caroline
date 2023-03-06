@@ -43,7 +43,7 @@ while True:
         connection_counter += 1
 
         t = threading.Thread(target=handle_connection, args=(conn, connection_counter,)).start()
-        # t.join()
+        t.join()
 
     except KeyboardInterrupt:
         print('Shutting down')
