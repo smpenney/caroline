@@ -12,7 +12,7 @@ HANDSHAKES = 2
 
 def signal_handler(signum: int, frame: any) ->None:
     signame = signal.Signals(signum).name
-    sys.stderr.write(f'SIGNAL: {signame} ({signum})\r\n')
+    sys.stderr.write(f'SIGNAL: {signame} ({signum})\n')
     raise SystemExit(0)
 
 def handshake(conn: socket.socket, addr: str) -> bool:
@@ -51,22 +51,22 @@ def handle_connection(conn: socket.socket, addr: str, num: int, dir: str) -> Non
                 f.write(file)
 
         except Exception as e:
-            sys.stderr.write(f'Error: {e}\r\n')
+            sys.stderr.write(f'Error: {e}\n')
 
 
-    sys.stdout.write(f'Thread for file {num}: received {size} bytes from {addr}\r\n')
+    sys.stdout.write(f'Thread for file {num}: received {size} bytes from {addr}\n')
 
 def listener(port: int, dir: str) -> None:
     server = socket.socket()
     server.bind((HOST, port))
     server.listen()
-    sys.stdout.write(f'Server started on port {port}\r\n')
+    sys.stdout.write(f'Server started on port {port}\n')
 
     connection_counter = 0
     while True:
         try:
             conn, addr = server.accept()
-            sys.stdout.write(f'Connection: {addr}\r\n')
+            sys.stdout.write(f'Connection: {addr}\n')
             connection_counter += 1
 
             t = threading.Thread(target=handle_connection, args=(
@@ -74,7 +74,7 @@ def listener(port: int, dir: str) -> None:
             # t.join()
 
         except Exception as e:
-            sys.stderr.write('ERROR: {e}\r\n')
+            sys.stderr.write('ERROR: {e}\n')
 
 def main():
 
@@ -85,13 +85,13 @@ def main():
     try:
         port = int(sys.argv[1])
     except:
-        sys.stderr.write('ERROR: No port specified\r\n')
+        sys.stderr.write('ERROR: No port specified\n')
         raise SystemExit(1)
 
     try:
         dir = sys.argv[2]
     except:
-        sys.stderr.write('ERROR: No directory specified\r\n')
+        sys.stderr.write('ERROR: No directory specified\n')
 
 
     listener(port, dir)

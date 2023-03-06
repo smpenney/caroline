@@ -11,7 +11,7 @@ HANDSHAKES = 2
 
 def signal_handler(signum: int, frame: any) -> None:
     signame = signal.Signals(signum).name
-    sys.stderr.write(f'SIGNAL: {signame} ({signum})\r\n')
+    sys.stderr.write(f'SIGNAL: {signame} ({signum})\n')
     raise SystemExit(0)
 
 
