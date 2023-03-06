@@ -10,12 +10,12 @@ COMMAND = b'accio\r\n'
 CONFIRMATION = b'confirm\r\n'
 HANDSHAKES = 2
 
-def signal_handler(signum, frame):
+def signal_handler(signum: int, frame: any) ->None:
     signame = signal.Signals(signum).name
     sys.stderr.write(f'SIGNAL: {signame} ({signum})\r\n')
     raise SystemExit(0)
 
-def handshake(conn, addr) -> bool:
+def handshake(conn: socket.socket, addr: str) -> bool:
     try:
         shakes = 0
         while shakes < 2:
@@ -29,7 +29,7 @@ def handshake(conn, addr) -> bool:
         sys.stderr.write(f'ERROR: handshake failed for {addr}\n')
         return False
 
-def handle_connection(conn: socket.socket, addr: str, num: int, dir: str):
+def handle_connection(conn: socket.socket, addr: str, num: int, dir: str) -> None:
     size = 0
     conn.setblocking(False)
     conn.settimeout(TIMEOUT)
@@ -56,7 +56,7 @@ def handle_connection(conn: socket.socket, addr: str, num: int, dir: str):
 
     sys.stdout.write(f'Thread for file {num}: received {size} bytes from {addr}\r\n')
 
-def listener(port, dir):
+def listener(port: int, dir: str) -> None:
     server = socket.socket()
     server.bind((HOST, port))
     server.listen()
