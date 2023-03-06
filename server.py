@@ -29,13 +29,14 @@ def handle_connection(conn: socket.socket, addr: str, num: int):
                     break
                 file += data
                 size += len(data)
-
-            with open(f'{num}.file', 'wb') as f:
-                f.write(file)
-
+                print('.', end='')
         except Exception as e:
             sys.stderr.write(f'Error: {e}\r\n')
-    sys.stdout.write(f'Thread {num}, received {size} from {addr}\r\n')
+
+        with open(f'{num}.file', 'wb') as f:
+                f.write(file)
+
+    sys.stdout.write(f'\nThread {num}, received {size} from {addr}\r\n')
 
 
 def main():

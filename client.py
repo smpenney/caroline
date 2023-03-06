@@ -1,7 +1,7 @@
 import socket
 import sys
 
-packet_size = 4096
+PACKET_SIZE = 4096
 TIMEOUT = 10
 COMMAND = b'accio\r\n'
 #CONFIRMATION = b'confirm\r\n'
@@ -36,33 +36,35 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         sys.stderr.write(f"ERROR: Failed to connect to {host}:{port}")
         sys.exit(1)
 
-    # #Receive accio commands
-    # try:
-    #     while True:
-    #         msg = s.recv(len(COMMAND))
-    #         if msg == COMMAND:
-    #             break
-    #         print('Received from Server A: ', msg.decode())
-    #         s.send('confirm-accio\r\n'.encode())
-    #         while True:
-    #             msg_2 = s.recv(10000)
-    #             if msg_2 == COMMAND:
-    #                 break
-    #             print('Received from Server B: ', msg_2.decode())
-    #             s.send('confirm-accio-again\r\n\r\n'.encode())
-    # except:
-    #     sys.stderr.write(f"ERROR: Failed to receive command from {host}:{port}\n")
-    #     sys.exit(1)
+    #Receive accio commands
+    try:
+        msg = s.recv(PACKET_SIZE)
+        print(f'RECV: {msg}')
+        # while True:
+        #     msg = s.recv(len(COMMAND))
+        #     if msg == COMMAND:
+        #         break
+        #     print('Received from Server A: ', msg.decode())
+        #     s.send('confirm-accio\r\n'.encode())
+        #     while True:
+        #         msg_2 = s.recv(10000)
+        #         if msg_2 == COMMAND:
+        #             break
+        #         print('Received from Server B: ', msg_2.decode())
+        #         s.send('confirm-accio-again\r\n\r\n'.encode())
+    except:
+        sys.stderr.write(f"ERROR: Failed to receive command from {host}:{port}\n")
+        sys.exit(1)
 
     #Try to send file
     try:
         sent_size = 0
         with open(file_name, 'rb') as f:
-            chunk = f.read()
+            chunk = f.read(PACKET_SIZE)
             while chunk:
-                s.sendall(chunk)
+                s.send(chunk)
                 sent_size += len(chunk)
-                chunk = f.read(packet_size)
+                chunk = f.read(PACKET_SIZE)
         print(f'Sent: {sent_size}')            
 
         if sent_size == 0:
