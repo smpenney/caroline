@@ -88,6 +88,11 @@ def main():
         sys.stderr.write('ERROR: No port specified\n')
         raise SystemExit(1)
 
+    # Validate port number
+    if not (port >= 1 and port):
+        sys.stderr.write(f"ERROR: Invalid port specified: {port}\n")
+        raise SystemExit(1)
+
     try:
         dir = sys.argv[2]
     except:
