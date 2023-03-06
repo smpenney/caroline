@@ -18,7 +18,7 @@ def signal_handler(signum: int, frame: any) ->None:
 def handshake(conn: socket.socket, addr: str) -> bool:
     try:
         shakes = 0
-        while shakes < 2:
+        while shakes < HANDSHAKES:
             conn.sendall(COMMAND)
             msg = conn.recv(PACKET_SIZE)
             print(f'RECV: {msg}')

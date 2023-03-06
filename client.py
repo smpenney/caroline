@@ -6,6 +6,7 @@ PACKET_SIZE = 4096
 TIMEOUT = 10
 COMMAND = b'accio\r\n'
 CONFIRMATION = b'confirm\r\n'
+HANDSHAKES = 2
 
 
 def signal_handler(signum: int, frame: any) -> None:
@@ -17,7 +18,7 @@ def signal_handler(signum: int, frame: any) -> None:
 def handshake(conn: socket.socket) -> bool:
     try:
         shakes = 0
-        while shakes < 2:
+        while shakes < HANDSHAKES:
             msg = conn.recv(PACKET_SIZE)
             print(f'RECV: {msg}')
             if msg == COMMAND:
