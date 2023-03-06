@@ -5,6 +5,7 @@ _Reference/os/java_ThreadOS/
 */*ThreadOS*
 project-for-data-structure/
 *.pcap
+*.file
 
 .env.py
 config.py

@@ -60,11 +60,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     try:
         sent_size = 0
         with open(file_name, 'rb') as f:
-            chunk = f.read(PACKET_SIZE)
-            while chunk:
-                s.send(chunk)
-                sent_size += len(chunk)
-                chunk = f.read(PACKET_SIZE)
+            chunk = f.read()
+            # while chunk:
+            s.sendall(chunk)
+            sent_size += len(chunk)
+                # chunk = f.read()
         print(f'Sent: {sent_size}')            
 
         if sent_size == 0:
