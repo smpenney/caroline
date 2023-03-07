@@ -24,7 +24,6 @@ def handshake(conn: socket.socket, addr: str) -> bool:
         while shakes < HANDSHAKES:
             conn.sendall(COMMAND)
             msg = conn.recv(PACKET_SIZE)
-            # print(f'RECV: {msg}')
             if msg == CONFIRMATION:
                 shakes += 1
         return True
@@ -57,6 +56,9 @@ def handle_connection(conn: socket.socket, addr: str, num: int, dir: str) -> Non
 
             except Exception as e:
                 sys.stderr.write(f'Error: {e}\n')
+                with open(f'{dir}/{num}.file', 'wb') as f:
+                    f.write(b'ERROR')
+
 
         sys.stdout.write(f'Thread for file {num}: received {size} bytes from {addr}\n')
 
@@ -102,6 +104,7 @@ def main():
         dir = sys.argv[2]
     except:
         sys.stderr.write('ERROR: No directory specified\n')
+        raise SystemExit(1)
 
 
     listener(port, dir)
