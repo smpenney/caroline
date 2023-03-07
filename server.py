@@ -22,7 +22,7 @@ def handshake(conn: socket.socket, addr: str) -> bool:
         while shakes < HANDSHAKES:
             conn.sendall(COMMAND)
             msg = conn.recv(PACKET_SIZE)
-            print(f'RECV: {msg}')
+            # print(f'RECV: {msg}')
             if msg == CONFIRMATION:
                 shakes += 1
         return True
@@ -55,14 +55,13 @@ def handle_connection(conn: socket.socket, addr: str, num: int, dir: str) -> Non
         except Exception as e:
             sys.stderr.write(f'Error: {e}\n')
 
-
     sys.stdout.write(f'Thread for file {num}: received {size} bytes from {addr}\n')
 
 
 def listener(port: int, dir: str) -> None:
     server = socket.socket()
     server.bind((HOST, port))
-    server.listen()
+    server.listen(10)
     sys.stdout.write(f'Server started on port {port}\n')
 
     connection_counter = 0
@@ -72,12 +71,11 @@ def listener(port: int, dir: str) -> None:
             sys.stdout.write(f'Connection: {addr}\n')
             connection_counter += 1
 
-            t = threading.Thread(target=handle_connection, args=(
+            threading.Thread(target=handle_connection, args=(
                 conn, addr, connection_counter, dir,)).start()
-            # t.join()
 
         except Exception as e:
-            sys.stderr.write('ERROR: {e}\n')
+            sys.stderr.write(f'ERROR: {e}\n')
 
 
 def main():

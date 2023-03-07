@@ -38,7 +38,7 @@ def send_file(host: str, port: int, file: str) -> None:
 
         # Initiate TCP connection between client and server
         try:
-            conn.connect((host, int(port)))
+            conn.connect((host, port))
             print("Connection established.")
         except:
             sys.stderr.write(f"ERROR: Failed to connect to {host}:{port}")
