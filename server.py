@@ -10,6 +10,8 @@ COMMAND = b'accio\r\n'
 CONFIRMATION = b'confirm\r\n'
 HANDSHAKES = 2
 
+socket_lock = threading.Lock()
+
 def signal_handler(signum: int, frame: any) -> None:
     signame = signal.Signals(signum).name
     sys.stderr.write(f'SIGNAL: {signame} ({signum})\n')
@@ -33,7 +35,7 @@ def handshake(conn: socket.socket, addr: str) -> bool:
 
 def handle_connection(conn: socket.socket, addr: str, num: int, dir: str) -> None:
     size = 0
-    conn.setblocking(False)
+    conn.setblocking(True)
     conn.settimeout(TIMEOUT)
 
     if not handshake(conn, addr):
@@ -48,6 +50,7 @@ def handle_connection(conn: socket.socket, addr: str, num: int, dir: str) -> Non
                     break
                 file += data
                 size += len(data)
+            socket_lock.release()
             
             with open(f'{dir}/{num}.file', 'wb') as f:
                 f.write(file)
@@ -71,6 +74,7 @@ def listener(port: int, dir: str) -> None:
             sys.stdout.write(f'Connection: {addr}\n')
             connection_counter += 1
 
+            socket_lock.acquire()
             threading.Thread(target=handle_connection, args=(
                 conn, addr, connection_counter, dir,)).start()
 
