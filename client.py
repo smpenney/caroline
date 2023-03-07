@@ -57,7 +57,8 @@ def send_file(host: str, port: int, file: str) -> None:
 
             if len(chunk) == 0:
                 raise Exception("Error: Failed to send data")
-        except:
+        except Exception as e:
+            sys.stderr.write(f"ERROR: {e}\n")
             sys.stderr.write(f"ERROR: Failed to send file to {host}:{port}")
             raise SystemExit(1)
 

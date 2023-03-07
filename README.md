@@ -24,3 +24,8 @@
     * Same as previous but in parallel
 * Server successfully receives sequentially 10 large files (~10 MiBytes) using the instructor’s version of the client and saves all the files from the previous test in 1.file, 2.file, … 10.file (with emulated delays and/or transmission errors)
     * Same as previous but in parallel
+
+## References
+
+* Selectors:  https://realpython.com/python-sockets/#running-the-multi-connection-client-and-server
+* Locking sockets:  https://www.geeksforgeeks.org/socket-programming-multi-threading-python/
