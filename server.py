@@ -38,27 +38,27 @@ def handle_connection(conn: socket.socket, addr: str, num: int, dir: str) -> Non
     conn.setblocking(True)
     conn.settimeout(TIMEOUT)
 
-    if not handshake(conn, addr):
-        return
+    with socket_lock:
+        if not handshake(conn, addr):
+            return
 
-    with conn:
-        try:
-            file = b''
-            while True:
-                data = conn.recv(PACKET_SIZE)
-                if not data:
-                    break
-                file += data
-                size += len(data)
-            socket_lock.release()
-            
-            with open(f'{dir}/{num}.file', 'wb') as f:
-                f.write(file)
+        with conn:
+            try:
+                file = b''
+                while True:
+                    data = conn.recv(PACKET_SIZE)
+                    if not data:
+                        break
+                    file += data
+                    size += len(data)
 
-        except Exception as e:
-            sys.stderr.write(f'Error: {e}\n')
+                with open(f'{dir}/{num}.file', 'wb') as f:
+                    f.write(file)
 
-    sys.stdout.write(f'Thread for file {num}: received {size} bytes from {addr}\n')
+            except Exception as e:
+                sys.stderr.write(f'Error: {e}\n')
+
+        sys.stdout.write(f'Thread for file {num}: received {size} bytes from {addr}\n')
 
 
 def listener(port: int, dir: str) -> None:
@@ -74,7 +74,6 @@ def listener(port: int, dir: str) -> None:
             sys.stdout.write(f'Connection: {addr}\n')
             connection_counter += 1
 
-            socket_lock.acquire()
             threading.Thread(target=handle_connection, args=(
                 conn, addr, connection_counter, dir,)).start()
 
