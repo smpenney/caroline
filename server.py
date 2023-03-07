@@ -1,6 +1,5 @@
 import socket
 import sys
-import threading
 import signal
 import selectors
 import types
@@ -12,7 +11,6 @@ COMMAND = b'accio\r\n'
 CONFIRMATION = b'confirm\r\n'
 HANDSHAKES = 2
 
-socket_lock = threading.Lock()
 sel = selectors.DefaultSelector()
 
 
@@ -36,8 +34,10 @@ def handshake(inbound: socket.socket, id: int) -> None:
         sys.stderr.write(f'SUCCESS: handshake complete for {addr}\n')
         conn.setblocking(False)
         conn.settimeout(TIMEOUT)
-        data = types.SimpleNamespace(addr=addr, inb=b'', outb=b'', num=id)
-        events = selectors.EVENT_READ | selectors.EVENT_WRITE
+        data = types.SimpleNamespace(addr=addr, num=id)
+        # data = types.SimpleNamespace(addr=addr, inb=b'', outb=b'', num=id)
+        # events = selectors.EVENT_READ | selectors.EVENT_WRITE
+        events = selectors.EVENT_READ
         sel.register(conn, events, data=data)
     except Exception as e:
         sys.stderr.write(f'ERROR: handshake failed for {addr}\n')
@@ -70,11 +70,11 @@ def handle_connection(key: selectors.SelectorKey, mask: int, num: int, dir: str)
                     f.write(b'ERROR')
         sel.unregister(conn)
         conn.close()
-    if mask & selectors.EVENT_WRITE:
-        if data.outb:
-            print(f'Echoing {data.outb} to {data.addr}')
-            sent = conn.send(data.outb)
-            data.outb = data.outb[sent:]
+    # if mask & selectors.EVENT_WRITE:
+    #     if data.outb:
+    #         print(f'Echoing {data.outb} to {data.addr}')
+    #         sent = conn.send(data.outb)
+    #         data.outb = data.outb[sent:]
 
 
 def listener(port: int, dir: str) -> None:
