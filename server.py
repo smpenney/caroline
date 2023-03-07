@@ -35,7 +35,7 @@ def handshake(conn: socket.socket, addr: str) -> bool:
 
 def handle_connection(conn: socket.socket, addr: str, num: int, dir: str) -> None:
     size = 0
-    conn.setblocking(True)
+    conn.setblocking(False)
     conn.settimeout(TIMEOUT)
 
     with socket_lock:
