@@ -68,6 +68,11 @@ def handle_connection(key: selectors.SelectorKey, mask: int, num: int, dir: str)
                     f.write(file)
                 sys.stdout.write(
                     f'Thread for file {num}: received {size} bytes from {data.addr}\n')
+                if size == 0:
+                    with open(f'{dir}/{num}.file', 'wb') as f:
+                        f.write(b'ERROR')
+
+
             except Exception as e:
                 sys.stderr.write(f'Error: {e}\n')
                 with open(f'{dir}/{num}.file', 'wb') as f:
