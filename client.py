@@ -1,6 +1,7 @@
 import socket
 import sys
 import signal
+import time
 
 PACKET_SIZE = 4096
 TIMEOUT = 100
@@ -21,7 +22,7 @@ def handshake(conn: socket.socket) -> bool:
         shakes = 0
         while shakes < HANDSHAKES:
             msg = conn.recv(PACKET_SIZE)
-            print(f'RECV: {msg}')
+            # print(f'RECV: {msg}')
             if msg == COMMAND and shakes == 0:
                 shakes += 1
                 conn.send(CONFIRMATION1)
@@ -42,15 +43,15 @@ def send_file(host: str, port: int, file: str) -> None:
         # Initiate TCP connection between client and server
         try:
             conn.connect((host, port))
-            print("Connection established.")
+            sys.stdout.write("Connection established.\n")
         except:
-            sys.stderr.write(f"ERROR: Failed to connect to {host}:{port}")
+            sys.stderr.write(f"ERROR: Failed to connect to {host}:{port}\n")
             raise SystemExit(1)
 
         # Receive accio commands
         if handshake(conn):
-                        
-            print(f'SUCCESS: handshake complete for {host}:{port}')
+            time.sleep(0.1)           
+            sys.stdout.write(f'SUCCESS: handshake complete for {host}:{port}\n')
 
             # Try to send file
             try:
@@ -63,7 +64,7 @@ def send_file(host: str, port: int, file: str) -> None:
                     raise Exception("Error: Failed to send data")
             except Exception as e:
                 sys.stderr.write(f"ERROR: {e}\n")
-                sys.stderr.write(f"ERROR: Failed to send file to {host}:{port}")
+                sys.stderr.write(f"ERROR: Failed to send file to {host}:{port}\n")
                 raise SystemExit(1)
 
             # Terminate the connection
@@ -71,7 +72,7 @@ def send_file(host: str, port: int, file: str) -> None:
                 conn.close()
                 raise SystemExit(0)
             except Exception as e:
-                sys.stderr.write(f"ERROR: Failed to close the connection: {e}")
+                sys.stderr.write(f"ERROR: Failed to close the connection: {e}\n")
                 raise SystemExit(1)
 
 

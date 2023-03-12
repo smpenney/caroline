@@ -50,7 +50,7 @@ class AccioServer(threading.Thread):
             while shakes < HANDSHAKES:
                 conn.send(COMMAND)
                 msg = conn.recv(PACKET_SIZE)
-                print(f'RECV: {msg}')
+                sys.stdout.write(f'RECV: {msg}\n')
                 if msg == CONFIRMATION1 and shakes == 0:
                     shakes += 1
                 if msg == CONFIRMATION2 and shakes == 1:
