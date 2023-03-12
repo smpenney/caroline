@@ -1,6 +1,7 @@
 import socket
 import sys
 import signal
+import threading
 import selectors
 import types
 
@@ -36,15 +37,12 @@ def handshake(inbound: socket.socket, id: int) -> None:
             if msg == CONFIRMATION2 and shakes == 1:
                 shakes += 1
         sys.stderr.write(f'SUCCESS: handshake complete for {addr}\n')
-        conn.setblocking(False)
         conn.settimeout(TIMEOUT)
         data = types.SimpleNamespace(addr=addr, num=id)
-        # data = types.SimpleNamespace(addr=addr, inb=b'', outb=b'', num=id)
-        # events = selectors.EVENT_READ | selectors.EVENT_WRITE
         events = selectors.EVENT_READ
         sel.register(conn, events, data=data)
     except Exception as e:
-        sys.stderr.write(f'ERROR: handshake failed for {addr}\n')
+        sys.stderr.write(f'ERROR: handshake failed for {addr}: {e}\n')
         return False
 
 
@@ -72,21 +70,12 @@ def handle_connection(key: selectors.SelectorKey, mask: int, num: int, dir: str)
                     f'Thread for file {num}: received {size} bytes from {data.addr}\n')
             except Exception as e:
                 sys.stderr.write(f'Error: {e}\n')
-        sel.unregister(conn)
-        conn.close()
-    # if mask & selectors.EVENT_WRITE:
-    #     if data.outb:
-    #         print(f'Echoing {data.outb} to {data.addr}')
-    #         sent = conn.send(data.outb)
-    #         data.outb = data.outb[sent:]
-
 
 def listener(port: int, dir: str) -> None:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((HOST, port))
     server.listen(10)
     sys.stdout.write(f'Server started on port {port}\n')
-    server.setblocking(False)
     sel.register(server, selectors.EVENT_READ, data=None)
 
     connection_counter = 0
@@ -96,9 +85,11 @@ def listener(port: int, dir: str) -> None:
             for key, mask in events:
                 if key.data is None:
                     connection_counter += 1
-                    handshake(key.fileobj, connection_counter)
+                    threading.Thread(target=handshake, args=(key.fileobj, connection_counter,)).start()
                 else:
-                    handle_connection(key, mask, connection_counter, dir)
+                    threading.Thread(target=handle_connection, args=(
+                        key, mask, connection_counter, dir,)).start()
+                    sel.unregister(key.fileobj)
         except Exception as e:
             sys.stderr.write(f'ERROR: {e}\n')
 

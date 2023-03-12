@@ -3,7 +3,7 @@ import sys
 import signal
 
 PACKET_SIZE = 4096
-TIMEOUT = 10
+TIMEOUT = 100
 COMMAND = b'accio\r\n'
 CONFIRMATION1 = b'confirm-accio\r\n'
 CONFIRMATION2 = b'confirm-accio-again\r\n\r\n'
@@ -27,7 +27,7 @@ def handshake(conn: socket.socket) -> bool:
                 conn.send(CONFIRMATION1)
             elif msg == COMMAND and shakes == 1:
                 shakes += 1
-                conn.send(CONFIRMATION2)
+                conn.sendall(CONFIRMATION2)
         return True
     except Exception as e:
         sys.stderr.write(f'ERROR: handshake failed for {conn}\n')
@@ -37,7 +37,6 @@ def handshake(conn: socket.socket) -> bool:
 def send_file(host: str, port: int, file: str) -> None:
     # Create a socket to handle the file upload
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as conn:
-        conn.setblocking(False)
         conn.settimeout(TIMEOUT)
 
         # Initiate TCP connection between client and server
@@ -49,32 +48,31 @@ def send_file(host: str, port: int, file: str) -> None:
             raise SystemExit(1)
 
         # Receive accio commands
-        if not handshake(conn):
-            return
-        
-        print(f'SUCCESS: handshake complete for {host}:{port}')
+        if handshake(conn):
+                        
+            print(f'SUCCESS: handshake complete for {host}:{port}')
 
-        # Try to send file
-        try:
-            with open(file, 'rb') as f:
-                chunk = f.read()
-                conn.sendall(chunk)
-            print(f'Sent: {len(chunk)}')
+            # Try to send file
+            try:
+                with open(file, 'rb') as f:
+                    chunk = f.read()
+                    conn.sendall(chunk)
+                print(f'Sent: {len(chunk)}')
 
-            if len(chunk) == 0:
-                raise Exception("Error: Failed to send data")
-        except Exception as e:
-            sys.stderr.write(f"ERROR: {e}\n")
-            sys.stderr.write(f"ERROR: Failed to send file to {host}:{port}")
-            raise SystemExit(1)
+                if len(chunk) == 0:
+                    raise Exception("Error: Failed to send data")
+            except Exception as e:
+                sys.stderr.write(f"ERROR: {e}\n")
+                sys.stderr.write(f"ERROR: Failed to send file to {host}:{port}")
+                raise SystemExit(1)
 
-        # Terminate the connection
-        try:
-            conn.close()
-            raise SystemExit(0)
-        except Exception as e:
-            sys.stderr.write(f"ERROR: Failed to close the connection: {e}")
-            raise SystemExit(1)
+            # Terminate the connection
+            try:
+                conn.close()
+                raise SystemExit(0)
+            except Exception as e:
+                sys.stderr.write(f"ERROR: Failed to close the connection: {e}")
+                raise SystemExit(1)
 
 
 def main():
