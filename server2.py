@@ -14,43 +14,37 @@ CONFIRMATION2 = b'confirm-accio-again\r\n\r\n'
 HANDSHAKES = 2
 
 
-class AccioServer(Thread):
-    def __init__(self, port, sel, dir) -> None:
+class AccioServer(threading.Thread):
+    def __init__(self, port: int, dir: str, sel: selectors.DefaultSelector) -> None:
         super().__init__(daemon=True)
-        self.sel = selectors.DefaultSelector()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connection_counter = 0
-        self.port = port
         self.sel = sel
+        self.port = port
         self.dir = dir
 
-    def run(self):
-
+    def run(self) -> None:
         self.server.bind((HOST, self.port))
-        self.server.listen(10)
-
+        self.server.listen()
         sys.stdout.write(f'Server started on port {self.port}\n')
 
         while True:
             try:
-                events = self.sel.select(timeout=None)
-                for key, mask in events:
-                    if key.data is None:
-                        connection_counter += 1
-                        threading.Thread(target=self.handshake, args=(
-                            key.fileobj, connection_counter,)).start()
-                    else:
-                        threading.Thread(target=handle_connection, args=(
-                            key, mask, connection_counter, dir,)).start()
-                        self.sel.unregister(key.fileobj)
+                conn, addr = self.server.accept()
+                sys.stdout.write(f'ACCEPT: {addr}\n')
+                self.connection_counter += 1
+                self.handshake(conn, addr, self.connection_counter)
             except Exception as e:
-                sys.stderr.write(f'ERROR: {e}\n')
+                sys.stderr.write(f'ERROR: accepting {addr}: {e}\n')
 
-
-    def handshake(self, inbound: socket.socket, id: int) -> None:
-        conn, addr = inbound.accept()
+    def handshake(self, conn: socket.socket, addr: str, id: int) -> None:
         sys.stdout.write(
             f'New connection: {id} : {addr}... attempting handshake\n')
+
+        with open(f'{self.dir}/{self.connection_counter}.file', 'wb') as f:
+            f.write(b'ERROR')
+
+        conn.settimeout(TIMEOUT)
         try:
             shakes = 0
             while shakes < HANDSHAKES:
@@ -67,26 +61,20 @@ class AccioServer(Thread):
             events = selectors.EVENT_READ
             self.sel.register(conn, events, data=data)
         except Exception as e:
-            sys.stderr.write(f'ERROR: handshake failed for {addr}: {e}\n')
-            return False
+            sys.stderr.write(f'ERROR in handshake: failed for {addr}: {e}\n')
 
 
-def signal_handler(signum: int, frame: any) -> None:
-    signame = signal.Signals(signum).name
-    sys.stderr.write(f'SIGNAL: {signame} ({signum})\n')
-    raise SystemExit(0)
+class AccioTransfer(threading.Thread):
+    def __init__(self, sel, dir):
+        super().__init__(daemon=True)
+        self.dir = dir
+        self.sel = sel
 
+    def handle_connection(self, key: selectors.SelectorKey) -> None:
+        size = 0
+        conn = key.fileobj
+        data = key.data
 
-
-
-def handle_connection(key: selectors.SelectorKey, mask: int, num: int, dir: str) -> None:
-    size = 0
-    conn = key.fileobj
-    data = key.data
-
-    with open(f'{dir}/{num}.file', 'wb') as f:
-        f.write(b'ERROR')
-    if mask & selectors.EVENT_READ:
         with conn:
             try:
                 file = b''
@@ -97,12 +85,26 @@ def handle_connection(key: selectors.SelectorKey, mask: int, num: int, dir: str)
                     file += filedata
                     size += len(filedata)
 
-                with open(f'{dir}/{num}.file', 'wb') as f:
+                with open(f'{self.dir}/{data.num}.file', 'wb') as f:
                     f.write(file)
                 sys.stdout.write(
-                    f'Thread for file {num}: received {size} bytes from {data.addr}\n')
+                    f'Thread for file {data.num}: received {size} bytes from {data.addr}\n')
             except Exception as e:
-                sys.stderr.write(f'Error: {e}\n')
+                sys.stderr.write(f'ERROR in handle_connection: {e}\n')
+
+    def run(self):
+        while True:
+            events = self.sel.select(timeout=None)
+            for key, mask in events:
+                if mask & selectors.EVENT_READ:
+                    self.handle_connection(key)
+                    self.sel.unregister(key.fileobj)
+
+
+def signal_handler(signum: int, frame: any) -> None:
+    signame = signal.Signals(signum).name
+    sys.stderr.write(f'SIGNAL: {signame} ({signum})\n')
+    raise SystemExit(0)
 
 
 def main():
@@ -128,10 +130,11 @@ def main():
         sys.stderr.write('ERROR: No directory specified\n')
         raise SystemExit(1)
 
-
     sel = selectors.DefaultSelector()
-    
-    server = AccioServer(port, sel, dir).start()
+
+    AccioTransfer(sel, dir).start()
+    server = AccioServer(port, dir, sel)
+    server.start()
     server.join()
 
 
