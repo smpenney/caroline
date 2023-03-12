@@ -5,7 +5,8 @@ import signal
 PACKET_SIZE = 4096
 TIMEOUT = 10
 COMMAND = b'accio\r\n'
-CONFIRMATION = b'confirm\r\n'
+CONFIRMATION1 = b'confirm-accio\r\n'
+CONFIRMATION2 = b'confirm-accio-again\r\n\r\n'
 HANDSHAKES = 2
 
 
@@ -21,9 +22,12 @@ def handshake(conn: socket.socket) -> bool:
         while shakes < HANDSHAKES:
             msg = conn.recv(PACKET_SIZE)
             print(f'RECV: {msg}')
-            if msg == COMMAND:
+            if msg == COMMAND and shakes == 0:
                 shakes += 1
-                conn.sendall(CONFIRMATION)
+                conn.send(CONFIRMATION1)
+            elif msg == COMMAND and shakes == 1:
+                shakes += 1
+                conn.send(CONFIRMATION2)
         return True
     except Exception as e:
         sys.stderr.write(f'ERROR: handshake failed for {conn}\n')
@@ -47,6 +51,8 @@ def send_file(host: str, port: int, file: str) -> None:
         # Receive accio commands
         if not handshake(conn):
             return
+        
+        print(f'SUCCESS: handshake complete for {host}:{port}')
 
         # Try to send file
         try:

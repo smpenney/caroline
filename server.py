@@ -8,7 +8,8 @@ TIMEOUT = 10
 PACKET_SIZE = 32768
 HOST = '0.0.0.0'
 COMMAND = b'accio\r\n'
-CONFIRMATION = b'confirm\r\n'
+CONFIRMATION1 = b'confirm-accio\r\n'
+CONFIRMATION2 = b'confirm-accio-again\r\n\r\n'
 HANDSHAKES = 2
 
 sel = selectors.DefaultSelector()
@@ -27,9 +28,12 @@ def handshake(inbound: socket.socket, id: int) -> None:
     try:
         shakes = 0
         while shakes < HANDSHAKES:
-            conn.sendall(COMMAND)
+            conn.send(COMMAND)
             msg = conn.recv(PACKET_SIZE)
-            if msg == CONFIRMATION:
+            print(f'RECV: {msg}')
+            if msg == CONFIRMATION1 and shakes == 0:
+                shakes += 1
+            if msg == CONFIRMATION2 and shakes == 1:
                 shakes += 1
         sys.stderr.write(f'SUCCESS: handshake complete for {addr}\n')
         conn.setblocking(False)
