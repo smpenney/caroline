@@ -27,5 +27,6 @@
 
 ## References
 
+* Assignment:  https://users.cs.fiu.edu/~afanasyev/classes/spring23/CNT-4713/project-1-accio-client.html
 * Selectors:  https://realpython.com/python-sockets/#running-the-multi-connection-client-and-server
 * Locking sockets:  https://www.geeksforgeeks.org/socket-programming-multi-threading-python/
