@@ -21,23 +21,23 @@ class AccioServer(threading.Thread):
         self.port = port
         self.dir = dir
 
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGQUIT, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
+        signal.signal(signal.SIGINT, self.__signal_handler)
+        signal.signal(signal.SIGQUIT, self.__signal_handler)
+        signal.signal(signal.SIGTERM, self.__signal_handler)
 
-    def _close(self, signame=None):
+    def __close(self, signame=None):
         if signame:
             sys.stdout.write(f'SERVER: shutting down after signal {signame}\n')
         self.server.shutdown(socket.SHUT_RDWR)
         self.server.close()
         raise SystemExit(0)
 
-    def signal_handler(self, sigid: int, frame: any) -> None:
+    def __signal_handler(self, sigid: int, frame: any) -> None:
         signame = signal.Signals(sigid).name
         sys.stderr.write(f'SIGNAL: {signame} ({sigid})\n')
-        self._close(signame)
+        self.__close(signame)
 
-    def generate_error(self):
+    def __generate_error(self):
         with open(f'{self.dir}/{self.id}.file', 'wb') as f:
             f.write(b'ERROR')
 
@@ -52,7 +52,7 @@ class AccioServer(threading.Thread):
                 conn, addr = self.server.accept()
                 self.id += 1
                 sys.stdout.write(f'ACCEPT {self.id}: {addr}\n')
-                self.generate_error()
+                self.__generate_error()
                 AccioTransfer(conn, addr, self.id, self.dir).start()
             except Exception as e:
                 sys.stderr.write(f'ERROR: accepting {addr}: {e}\n')
@@ -66,14 +66,14 @@ class AccioTransfer(threading.Thread):
         self.conn = conn
         self.addr = addr
 
-    def generate_error(self):
+    def __generate_error(self):
         with open(f'{self.dir}/{self.id}.file', 'wb') as f:
             f.write(b'ERROR')
 
-    def handshake(self) -> bool:
+    def __handshake(self) -> bool:
         sys.stdout.write(
             f'THREAD {self.id}: Start handshake: {self.addr}\n')
-        self.generate_error()
+        self.__generate_error()
         self.conn.settimeout(TIMEOUT)
         try:
             shakes = 0
@@ -93,7 +93,7 @@ class AccioTransfer(threading.Thread):
             sys.stderr.write(f'THREAD {self.id}: ERROR handshake for {self.addr}: {e}\n')
             return False
 
-    def handle_connection(self) -> None:
+    def __handle_connection(self) -> None:
         size = 0
         with self.conn:
             try:
@@ -110,16 +110,16 @@ class AccioTransfer(threading.Thread):
                 sys.stdout.write(
                     f'THREAD {self.id}: received {size} bytes from {self.addr}\n')
                 if size == 0:
-                    sys.stderr.write(f'THREAD {self.id}: writing ERROR file - no data reeived!\n')
-                    self.generate_error()
+                    sys.stderr.write(f'THREAD {self.id}: no data received, writing ERROR file\n')
+                    self.__generate_error()
             except Exception as e:
-                sys.stderr.write(f'THREAD {self.id}: ERROR in handle_connection: {e}\n')
-                self.generate_error()
+                sys.stderr.write(f'THREAD {self.id}: ERROR in __handle_connection: {e}\n')
+                self.__generate_error()
 
 
     def run(self):
-        if self.handshake():
-            self.handle_connection()
+        if self.__handshake():
+            self.__handle_connection()
 
 
 def main():

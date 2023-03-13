@@ -54,8 +54,8 @@ def send_file(host: str, port: int, file: str) -> None:
 
             # Try to send file
             try:
-                # time.sleep(15)     # TIMEOUT testing
-                conn.close()       # drop connection test
+                time.sleep(15)     # TIMEOUT testing
+                # conn.close()       # drop connection test
             except Exception as e:
                 sys.stderr.write(f"ERROR: {e}\n")
                 sys.stderr.write(
