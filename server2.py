@@ -21,6 +21,22 @@ class AccioServer(threading.Thread):
         self.port = port
         self.dir = dir
 
+        signal.signal(signal.SIGINT, self.signal_handler)
+        signal.signal(signal.SIGQUIT, self.signal_handler)
+        signal.signal(signal.SIGTERM, self.signal_handler)
+
+    def _close(self, signame=None):
+        if signame:
+            sys.stdout.write(f'SERVER: shutting down after signal {signame}\n')
+        self.server.shutdown(socket.SHUT_RDWR)
+        self.server.close()
+        raise SystemExit(0)
+
+    def signal_handler(self, sigid: int, frame: any) -> None:
+        signame = signal.Signals(sigid).name
+        sys.stderr.write(f'SIGNAL: {signame} ({sigid})\n')
+        self._close(signame)
+
     def generate_error(self):
         with open(f'{self.dir}/{self.id}.file', 'wb') as f:
             f.write(b'ERROR')
@@ -29,7 +45,7 @@ class AccioServer(threading.Thread):
     def run(self) -> None:
         self.server.bind((HOST, self.port))
         self.server.listen()
-        sys.stdout.write(f'Server started on port {self.port}\n')
+        sys.stdout.write(f'SERVER: listening on port {self.port}\n')
 
         while True:
             try:
@@ -40,7 +56,6 @@ class AccioServer(threading.Thread):
                 AccioTransfer(conn, addr, self.id, self.dir).start()
             except Exception as e:
                 sys.stderr.write(f'ERROR: accepting {addr}: {e}\n')
-
 
 
 class AccioTransfer(threading.Thread):
@@ -107,17 +122,7 @@ class AccioTransfer(threading.Thread):
             self.handle_connection()
 
 
-def signal_handler(sigid: int, frame: any) -> None:
-    signame = signal.Signals(sigid).name
-    sys.stderr.write(f'SIGNAL: {signame} ({sigid})\n')
-    raise SystemExit(0)
-
-
 def main():
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGQUIT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
 
     try:
         port = int(sys.argv[1])
