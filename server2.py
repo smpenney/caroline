@@ -72,7 +72,7 @@ class AccioTransfer(threading.Thread):
             f.write(b'ERROR')
 
     def __handshake(self) -> bool:
-        sys.stdout.write(
+        sys.stderr.write(
             f'THREAD {self.id}: Start handshake: {self.addr}\n')
         self.__generate_error()
         self.conn.settimeout(TIMEOUT)
@@ -88,7 +88,7 @@ class AccioTransfer(threading.Thread):
                     msg = self.conn.recv(len(CONFIRMATION2))
                     if msg == CONFIRMATION2:
                         shakes += 1
-            sys.stdout.write(f'THREAD {self.id}: SUCCESS handshake for {self.addr}\n')
+            sys.stderr.write(f'THREAD {self.id}: SUCCESS handshake for {self.addr}\n')
             return True
         except Exception as e:
             sys.stderr.write(f'THREAD {self.id}: ERROR handshake for {self.addr}: {e}\n')
