@@ -4,7 +4,7 @@ import signal
 import time
 import threading
 
-TIMEOUT = 100
+TIMEOUT = 10
 COMMAND = b'accio\r\n'
 CONFIRMATION1 = b'confirm-accio\r\n'
 CONFIRMATION2 = b'confirm-accio-again\r\n\r\n'
@@ -63,28 +63,16 @@ class AccioClientTransfer(threading.Thread):
 
 
 
-    def __send_file(self) -> None:
-        # Create a socket to handle the file upload
-        with self.conn:
+    def __run_tests(self) -> None:
+        action = self.id % 3
+        match action:
+            case 0: 
+                self.__test_send_file()     # send an actual file
+            case 1:
+                self.__test_timeout()       # TIMEOUT testing
+            case 2:
+                self.__test_nodata()        # drop connection test
 
-            action = self.id % 3
-            match action:
-                case 0: 
-                    self.__test_send_file()     # send an actual file
-                case 1:
-                    self.__test_timeout()       # TIMEOUT testing
-                case 2:
-                    self.__test_nodata()        # drop connection test
-
-            # Terminate the connection
-            try:
-                self.conn.shutdown(socket.SHUT_RDWR)
-                self.conn.close()
-                raise SystemExit(0)
-            except Exception as e:
-                sys.stderr.write(
-                    f"ERROR: Failed to close the connection: {e}\n")
-                raise SystemExit(1)
 
     def run(self):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -92,13 +80,25 @@ class AccioClientTransfer(threading.Thread):
         # Initiate TCP connection between client and server
         try:
             self.conn.connect((self.host, self.port))
-            sys.stdout.write("Connection established.\n")
+            sys.stdout.write(f"THREAD {self.id}: Connection established.\n")
             if self.__handshake():
-                self.__send_file()
+                self.__run_tests()
+            sys.stdout.write(f"THREAD {self.id}: Back.\n")
         except Exception as e:
             sys.stderr.write(
-                f"ERROR: Failed to connect to {self.host}:{self.port}\n: {e}")
+                f"THREAD {self.id}: ERROR: Failed to connect to {self.host}:{self.port}\n: {e}")
             raise SystemExit(1)
+            # Terminate the connection
+        try:
+            self.conn.shutdown(socket.SHUT_RDWR)
+            self.conn.close()
+            sys.stdout.write(f"THREAD {self.id}: Shutdown.\n")
+            raise SystemExit(0)
+        except Exception as e:
+            sys.stderr.write(
+                f"THREAD {self.id}: ERROR: Failed to close the connection: {e}\n")
+            raise SystemExit(1)
+
 
 
 def signal_handler(signum: int, frame: any) -> None:
@@ -132,9 +132,8 @@ def main():
     clients = []
     for i in range(0, threads):
         client = AccioClientTransfer(host, port, i, file)
-        client.start()
         clients.append(client)
-    print(clients)
+        client.start()
     for i in clients:
         i.join()
 

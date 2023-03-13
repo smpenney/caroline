@@ -29,7 +29,7 @@ class AccioServer(threading.Thread):
     def __close(self, signame=None):
         if signame:
             sys.stdout.write(f'SERVER: shutting down after signal {signame}\n')
-        self.server.shutdown(socket.SHUT_RDWR)
+        # self.server.shutdown(socket.SHUT_RDWR)
         self.server.close()
         raise SystemExit(0)
 
