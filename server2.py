@@ -2,6 +2,7 @@ import socket
 import sys
 import signal
 import threading
+import os
 
 TIMEOUT = 10
 PACKET_SIZE = 524288
@@ -45,7 +46,7 @@ class AccioServer(threading.Thread):
     def run(self) -> None:
         self.server.bind((HOST, self.port))
         self.server.listen()
-        sys.stdout.write(f'SERVER: listening on port {self.port}\n')
+        sys.stdout.write(f'SERVER: pid {os.getpid()} listening on port {self.port}\n')
 
         while True:
             try:
