@@ -90,6 +90,8 @@ class AccioTransfer(threading.Thread):
                         if msg_buffer == CONFIRMATION1:
                             shakes += 1
                             break
+                        elif len(msg) == 0:
+                            break
                         else:
                             len_remains -= len(msg)
                 elif shakes == 1:
@@ -102,6 +104,8 @@ class AccioTransfer(threading.Thread):
                         if msg_buffer == CONFIRMATION2:
                             shakes += 1
                             break
+                        elif len(msg) == 0:
+                             break
                         else:
                             len_remains -= len(msg)
             sys.stderr.write(f'THREAD {self.id}: SUCCESS handshake for {self.addr}\n')
