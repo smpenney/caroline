@@ -81,13 +81,29 @@ class AccioTransfer(threading.Thread):
             while shakes < HANDSHAKES:
                 self.conn.send(COMMAND)
                 if shakes == 0:
-                    msg = self.conn.recv(len(CONFIRMATION1))
-                    if msg == CONFIRMATION1:
-                        shakes += 1
+                    msg_buffer = b''
+                    len_remains = len(CONFIRMATION1)
+                    while True:
+                        msg = self.conn.recv(len_remains)
+                        msg_buffer += msg
+                        print(f'msg: {msg}, buffer: {msg_buffer}')
+                        if msg_buffer == CONFIRMATION1:
+                            shakes += 1
+                            break
+                        else:
+                            len_remains -= len(msg)
                 elif shakes == 1:
-                    msg = self.conn.recv(len(CONFIRMATION2))
-                    if msg == CONFIRMATION2:
-                        shakes += 1
+                    msg_buffer = b''
+                    len_remains = len(CONFIRMATION2)
+                    while True:
+                        msg = self.conn.recv(len_remains)
+                        msg_buffer += msg
+                        print(f'msg: {msg}, buffer: {msg_buffer}')
+                        if msg_buffer == CONFIRMATION2:
+                            shakes += 1
+                            break
+                        else:
+                            len_remains -= len(msg)
             sys.stderr.write(f'THREAD {self.id}: SUCCESS handshake for {self.addr}\n')
             return True
         except Exception as e:
