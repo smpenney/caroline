@@ -3,7 +3,6 @@ import sys
 import signal
 import time
 
-PACKET_SIZE = 4096
 TIMEOUT = 100
 COMMAND = b'accio\r\n'
 CONFIRMATION1 = b'confirm-accio\r\n'
@@ -21,8 +20,8 @@ def handshake(conn: socket.socket) -> bool:
     try:
         shakes = 0
         while shakes < HANDSHAKES:
-            msg = conn.recv(PACKET_SIZE)
-            # print(f'RECV: {msg}')
+            msg = conn.recv(len(COMMAND))
+            print(f'RECV: {msg}')
             if msg == COMMAND and shakes == 0:
                 shakes += 1
                 conn.send(CONFIRMATION1)
@@ -50,7 +49,6 @@ def send_file(host: str, port: int, file: str) -> None:
 
         # Receive accio commands
         if handshake(conn):
-            time.sleep(0.1)           
             sys.stdout.write(f'SUCCESS: handshake complete for {host}:{port}\n')
 
             # Try to send file

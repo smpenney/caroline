@@ -1,9 +1,9 @@
 import socket
 import sys
 import signal
+import time
 
-PACKET_SIZE = 4096
-TIMEOUT = 10
+TIMEOUT = 100
 COMMAND = b'accio\r\n'
 CONFIRMATION1 = b'confirm-accio\r\n'
 CONFIRMATION2 = b'confirm-accio-again\r\n\r\n'
@@ -20,14 +20,14 @@ def handshake(conn: socket.socket) -> bool:
     try:
         shakes = 0
         while shakes < HANDSHAKES:
-            msg = conn.recv(PACKET_SIZE)
+            msg = conn.recv(len(COMMAND))
             print(f'RECV: {msg}')
             if msg == COMMAND and shakes == 0:
                 shakes += 1
                 conn.send(CONFIRMATION1)
             elif msg == COMMAND and shakes == 1:
                 shakes += 1
-                conn.send(CONFIRMATION2)
+                conn.sendall(CONFIRMATION2)
         return True
     except Exception as e:
         sys.stderr.write(f'ERROR: handshake failed for {conn}\n')
@@ -37,33 +37,39 @@ def handshake(conn: socket.socket) -> bool:
 def send_file(host: str, port: int, file: str) -> None:
     # Create a socket to handle the file upload
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as conn:
-        conn.setblocking(False)
         conn.settimeout(TIMEOUT)
 
         # Initiate TCP connection between client and server
         try:
             conn.connect((host, port))
-            print("Connection established.")
+            sys.stdout.write("Connection established.\n")
         except:
-            sys.stderr.write(f"ERROR: Failed to connect to {host}:{port}")
+            sys.stderr.write(f"ERROR: Failed to connect to {host}:{port}\n")
             raise SystemExit(1)
 
         # Receive accio commands
-        if not handshake(conn):
-            return
-        
-        print(f'SUCCESS: handshake complete for {host}:{port}')
+        if handshake(conn):
+            sys.stdout.write(
+                f'SUCCESS: handshake complete for {host}:{port}\n')
 
-        # Try to send file
-        while True:
-            print('nothing')
-        # Terminate the connection
-        try:
-            conn.close()
-            raise SystemExit(0)
-        except Exception as e:
-            sys.stderr.write(f"ERROR: Failed to close the connection: {e}")
-            raise SystemExit(1)
+            # Try to send file
+            try:
+                # time.sleep(15)     # TIMEOUT testing
+                conn.close()       # drop connection test
+            except Exception as e:
+                sys.stderr.write(f"ERROR: {e}\n")
+                sys.stderr.write(
+                    f"ERROR: Failed to send file to {host}:{port}\n")
+                raise SystemExit(1)
+
+            # Terminate the connection
+            try:
+                conn.close()
+                raise SystemExit(0)
+            except Exception as e:
+                sys.stderr.write(
+                    f"ERROR: Failed to close the connection: {e}\n")
+                raise SystemExit(1)
 
 
 def main():
